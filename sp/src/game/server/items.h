@@ -35,7 +35,27 @@
 #define SIZE_AMMO_CROSSBOW			6
 #define	SIZE_AMMO_AR2_ALTFIRE		1
 
+#ifdef CSS_WEAPONS_IN_HL2
+#define SIZE_AMMO_45ACP				20
+#define SIZE_AMMO_45ACP_LARGE		60
+#define SIZE_AMMO_357SIG			13
+#define SIZE_AMMO_357SIG_LARGE		39
+#define SIZE_AMMO_556mm			30
+#define SIZE_AMMO_556mm_LARGE		60
+#define SIZE_AMMO_762mm			30
+#define SIZE_AMMO_762mm_LARGE		60
+#endif
+
 #define SF_ITEM_START_CONSTRAINED	0x00000001
+#ifdef MAPBASE
+// Copied from CBaseCombatWeapon's flags, including any additions we made to those.
+// I really, REALLY hope no item uses their own spawnflags either.
+#define SF_ITEM_NO_PLAYER_PICKUP	(1<<1)
+#define SF_ITEM_NO_PHYSCANNON_PUNT (1<<2)
+#define SF_ITEM_NO_NPC_PICKUP	(1<<3)
+
+#define SF_ITEM_ALWAYS_TOUCHABLE	(1<<6) // This needs to stay synced with the weapon spawnflag
+#endif
 
 
 class CItem : public CBaseAnimating, public CDefaultPlayerPickupVPhysics
@@ -77,6 +97,18 @@ public:
 #if defined( HL2MP ) || defined( TF_DLL )
 	void	FallThink( void );
 	float  m_flNextResetCheckTime;
+#endif
+
+#ifdef MAPBASE
+	// This is in CBaseEntity, but I can't find a use for it anywhere.
+	// Must not have been fully implemented. Please remove this if it turns out to be something important.
+	virtual bool IsCombatItem() { return true; }
+
+	void	InputEnablePlayerPickup( inputdata_t &inputdata );
+	void	InputDisablePlayerPickup( inputdata_t &inputdata );
+	void	InputEnableNPCPickup( inputdata_t &inputdata );
+	void	InputDisableNPCPickup( inputdata_t &inputdata );
+	void	InputBreakConstraint( inputdata_t &inputdata );
 #endif
 
 	DECLARE_DATADESC();

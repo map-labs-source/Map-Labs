@@ -875,34 +875,43 @@ void CAmbientGeneric::InputStopSound( inputdata_t &inputdata )
 	}
 }
 
-void CAmbientGeneric::SendSound( SoundFlags_t flags)
+void CAmbientGeneric::SendSound(SoundFlags_t flags)
 {
-	char *szSoundFile = (char *)STRING( m_iszSound );
+	char *szSoundFile = (char *)STRING(m_iszSound);
 	CBaseEntity* pSoundSource = m_hSoundSource;
-	if ( pSoundSource )
+	if (pSoundSource)
 	{
-		if ( flags == SND_STOP )
+		if (flags == SND_STOP)
 		{
-			UTIL_EmitAmbientSound(pSoundSource->GetSoundSourceIndex(), pSoundSource->GetAbsOrigin(), szSoundFile, 
-						0, SNDLVL_NONE, flags, 0);
+			UTIL_EmitAmbientSound(pSoundSource->GetSoundSourceIndex(), pSoundSource->GetAbsOrigin(), szSoundFile,
+				0, SNDLVL_NONE, flags, 0);
+			m_fActive = false;
 		}
 		else
 		{
-			UTIL_EmitAmbientSound(pSoundSource->GetSoundSourceIndex(), pSoundSource->GetAbsOrigin(), szSoundFile, 
+			UTIL_EmitAmbientSound(pSoundSource->GetSoundSourceIndex(), pSoundSource->GetAbsOrigin(), szSoundFile,
 				(m_dpv.vol * 0.01), m_iSoundLevel, flags, m_dpv.pitch);
+
+			// Only mark active if this is a looping sound.  If not looping, each
+			// trigger will cause the sound to play.  If the sound is still
+			// playing from a previous trigger press, it will be shut off
+			// and then restarted.
+
+			if (m_fLooping)
+				m_fActive = true;
 		}
-	}	
+	}
 	else
 	{
-		if ( ( flags == SND_STOP ) && 
-			( m_nSoundSourceEntIndex != -1 ) )
+		if ((flags == SND_STOP) &&
+			(m_nSoundSourceEntIndex != -1))
 		{
-			UTIL_EmitAmbientSound(m_nSoundSourceEntIndex, GetAbsOrigin(), szSoundFile, 
-					0, SNDLVL_NONE, flags, 0);
+			UTIL_EmitAmbientSound(m_nSoundSourceEntIndex, GetAbsOrigin(), szSoundFile,
+				0, SNDLVL_NONE, flags, 0);
+			m_fActive = false;
 		}
 	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Input handler that stops playing the sound.
@@ -1187,7 +1196,7 @@ int SENTENCEG_PlayRndI(edict_t *entity, int isentenceg,
 	name[0] = 0;
 
 	ipick = engine->SentenceGroupPick( isentenceg, name, sizeof( name ) );
-	if ( ( ipick > 0 ) && name[0] )
+	if (ipick > 0 && name)
 	{
 		int sentenceIndex = SENTENCEG_Lookup( name );
 		CPASAttenuationFilter filter( GetContainingEntity( entity ), soundlevel );

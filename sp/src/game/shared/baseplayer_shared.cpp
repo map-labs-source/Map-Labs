@@ -32,6 +32,7 @@
 	#include "doors.h"
 	#include "ai_basenpc.h"
 	#include "env_zoom.h"
+	#include "ammodef.h"
 
 	extern int TrainSpeed(int iSpeed, int iMax);
 	
@@ -56,7 +57,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if defined(GAME_DLL) && !defined(_XBOX)
+#if defined(GAME_DLL)
+	//ConVar sv_infinite_ammo("sv_infinite_ammo", "0", FCVAR_CHEAT, "Player's active weapon will never run out of ammo");
+#if !defined(_XBOX)
 	extern ConVar sv_pushaway_max_force;
 	extern ConVar sv_pushaway_force;
 	extern ConVar sv_turbophysics;
@@ -85,6 +88,7 @@
 			return g_pGameRules->CanEntityBeUsePushed( pEntity );
 		}
 	};
+#endif
 #endif
 
 #ifdef CLIENT_DLL
@@ -163,12 +167,30 @@ void CBasePlayer::ItemPreFrame()
 	// Handle use events
 	PlayerUse();
 
-	CBaseCombatWeapon *pActive = GetActiveWeapon();
+	//Tony; re-ordered this for efficiency and to make sure that certain things happen in the correct order!
+    if ( gpGlobals->curtime < m_flNextAttack )
+	{
+		return;
+	}
 
+	if (!GetActiveWeapon())
+		return;
+
+#if defined( CLIENT_DLL )
+	// Not predicting this weapon
+	if ( !GetActiveWeapon()->IsPredicted() )
+		return;
+#endif
+
+	GetActiveWeapon()->ItemPreFrame();
+
+	CBaseCombatWeapon *pWeapon;
+
+	CBaseCombatWeapon *pActive = GetActiveWeapon();
 	// Allow all the holstered weapons to update
 	for ( int i = 0; i < WeaponCount(); ++i )
 	{
-		CBaseCombatWeapon *pWeapon = GetWeapon( i );
+		pWeapon = GetWeapon( i );
 
 		if ( pWeapon == NULL )
 			continue;
@@ -178,20 +200,6 @@ void CBasePlayer::ItemPreFrame()
 
 		pWeapon->ItemHolsterFrame();
 	}
-
-    if ( gpGlobals->curtime < m_flNextAttack )
-		return;
-
-	if (!pActive)
-		return;
-
-#if defined( CLIENT_DLL )
-	// Not predicting this weapon
-	if ( !pActive->IsPredicted() )
-		return;
-#endif
-
-	pActive->ItemPreFrame();
 }
 
 //-----------------------------------------------------------------------------
@@ -289,6 +297,22 @@ void CBasePlayer::ItemPostFrame()
 
 #if !defined( CLIENT_DLL )
 	ImpulseCommands();
+
+	// Infinite Ammo
+	/*if (sv_infinite_ammo.GetBool() && (GetActiveWeapon() != NULL))
+	{
+		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+
+		pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
+		int iPrimaryAmmoType = pWeapon->GetPrimaryAmmoType();
+		if (iPrimaryAmmoType >= 0)
+			SetAmmoCount(GetAmmoDef()->MaxCarry(iPrimaryAmmoType), iPrimaryAmmoType);
+
+		pWeapon->m_iClip2 = pWeapon->GetMaxClip2();
+		int iSecondaryAmmoType = pWeapon->GetSecondaryAmmoType();
+		if (iSecondaryAmmoType >= 0)
+			SetAmmoCount(GetAmmoDef()->MaxCarry(iSecondaryAmmoType), iSecondaryAmmoType);
+	}*/
 #else
 	// NOTE: If we ever support full impulse commands on the client,
 	// remove this line and call ImpulseCommands instead.

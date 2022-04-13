@@ -16,6 +16,7 @@ $Configuration
 	{
 		$AdditionalIncludeDirectories	".\hl2;.\hl2\elements;$SRCDIR\game\shared\hl2;$SRCDIR\game\shared\episodic;..\..\public;$BASE"
 		$PreprocessorDefinitions		"$BASE;HL2_CLIENT_DLL;HL2_EPISODIC"
+		$PreprocessorDefinitions		"$BASE;CSS_WEAPONS_IN_HL2"
 	}
 }
 
@@ -33,6 +34,13 @@ $Project "Client (Episodic)"
 			$File	"$SRCDIR\game\shared\episodic\achievements_ep1.cpp"
 			$File	"$SRCDIR\game\shared\episodic\achievements_ep2.cpp"
 			$File	"$SRCDIR\game\shared\episodic\achievements_epx.cpp"
+			$File	"$SRCDIR\game\shared\episodic\achievements_maplab.cpp"
+			$File	"$SRCDIR\game\shared\lab\lab_gamerules.cpp"
+			$File	"$SRCDIR\game\shared\lab\lab_gamerules.h"
+			$File	"$SRCDIR\game\shared\lab\handviewmodel_shared.cpp"
+			//$File	"$SRCDIR\game\shared\lab\weapon_slam.cpp" // Map Labs uses Mapbase SLAMs now (Blixibon)
+			//$File	"$SRCDIR\game\shared\lab\weapon_slam.h"
+			$File	"$SRCDIR\game\client\lab\convars_maplab.cpp"
 			$File	"hl2\c_antlion_dust.cpp"
 			$File	"hl2\c_ar2_explosion.cpp"
 			$File	"hl2\c_barnacle.cpp"
@@ -79,7 +87,7 @@ $Project "Client (Episodic)"
 			$File	"hl2\c_weapon_crossbow.cpp"
 			$File	"episodic\c_weapon_hopwire.cpp"
 			$File	"hl2\c_weapon_physcannon.cpp"
-			$File	"hl2\c_weapon_stunstick.cpp"
+			$File	"hl2\c_weapon_stunstick.cpp" [!$MAPBASE] // See client_mapbase.vpc
 			$File	"$SRCDIR\game\shared\hl2\citadel_effects_shared.h"
 			$File	"hl2\clientmode_hlnormal.cpp"
 			$File	"hl2\clientmode_hlnormal.h"
@@ -126,6 +134,18 @@ $Project "Client (Episodic)"
 			$File	"$SRCDIR\game\shared\hl2\survival_gamerules.cpp"
 			$File	"hl2\vgui_rootpanel_hl2.cpp"
 			$File	"episodic\c_npc_puppet.cpp"
+
+			$Folder	"CS:S Weapons"
+			{
+				//$File	"$SRCDIR\game\shared\hl2\weapon_css_base_activitylists.cpp"
+				$File	"$SRCDIR\game\shared\hl2\weapon_css_base.cpp"
+				$File	"$SRCDIR\game\shared\hl2\weapon_css_base.h"
+				$File	"$SRCDIR\game\shared\hl2\weapon_css_pistols.cpp"
+				$File	"$SRCDIR\game\shared\hl2\weapon_css_rifles.cpp"
+				$File	"$SRCDIR\game\shared\hl2\weapon_css_shotguns.cpp"
+				$File	"$SRCDIR\game\shared\hl2\weapon_css_smgs.cpp"
+				$File	"$SRCDIR\game\shared\hl2\weapon_css_misc.cpp"
+			}
 		}
 	}
 	

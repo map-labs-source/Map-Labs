@@ -32,6 +32,7 @@
 	#include "doors.h"
 	#include "ai_basenpc.h"
 	#include "env_zoom.h"
+	#include "ammodef.h"
 
 	extern int TrainSpeed(int iSpeed, int iMax);
 	
@@ -56,7 +57,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if defined(GAME_DLL) && !defined(_XBOX)
+#if defined(GAME_DLL)
+	//ConVar sv_infinite_ammo("sv_infinite_ammo", "0", FCVAR_CHEAT, "Player's active weapon will never run out of ammo");
+#if !defined(_XBOX)
 	extern ConVar sv_pushaway_max_force;
 	extern ConVar sv_pushaway_force;
 	extern ConVar sv_turbophysics;
@@ -85,6 +88,7 @@
 			return g_pGameRules->CanEntityBeUsePushed( pEntity );
 		}
 	};
+#endif
 #endif
 
 #ifdef CLIENT_DLL
@@ -289,6 +293,22 @@ void CBasePlayer::ItemPostFrame()
 
 #if !defined( CLIENT_DLL )
 	ImpulseCommands();
+
+	// Infinite Ammo
+	/*if (sv_infinite_ammo.GetBool() && (GetActiveWeapon() != NULL))
+	{
+		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+
+		pWeapon->m_iClip1 = pWeapon->GetMaxClip1();
+		int iPrimaryAmmoType = pWeapon->GetPrimaryAmmoType();
+		if (iPrimaryAmmoType >= 0)
+			SetAmmoCount(GetAmmoDef()->MaxCarry(iPrimaryAmmoType), iPrimaryAmmoType);
+
+		pWeapon->m_iClip2 = pWeapon->GetMaxClip2();
+		int iSecondaryAmmoType = pWeapon->GetSecondaryAmmoType();
+		if (iSecondaryAmmoType >= 0)
+			SetAmmoCount(GetAmmoDef()->MaxCarry(iSecondaryAmmoType), iSecondaryAmmoType);
+	}*/
 #else
 	// NOTE: If we ever support full impulse commands on the client,
 	// remove this line and call ImpulseCommands instead.
@@ -342,7 +362,7 @@ Vector CBasePlayer::EyePosition( )
 #ifdef CLIENT_DLL
 		if ( IsObserver() )
 		{
-			if ( GetObserverMode() == OBS_MODE_CHASE || GetObserverMode() == OBS_MODE_POI )
+			if ( GetObserverMode() == OBS_MODE_CHASE )
 			{
 				if ( IsLocalPlayer() )
 				{
@@ -1035,7 +1055,7 @@ void CBasePlayer::SelectItem( const char *pstr, int iSubType )
 	// Make sure the current weapon can be holstered
 	if ( GetActiveWeapon() )
 	{
-		if ( !GetActiveWeapon()->CanHolster() && !pItem->ForceWeaponSwitch() )
+		if ( !GetActiveWeapon()->CanHolster() )
 			return;
 
 		ResetAutoaim( );
@@ -1703,7 +1723,6 @@ void CBasePlayer::CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float&
 		case OBS_MODE_IN_EYE	:	CalcInEyeCamView( eyeOrigin, eyeAngles, fov );
 									break;
 
-		case OBS_MODE_POI		: // PASSTIME
 		case OBS_MODE_CHASE		:	CalcChaseCamView( eyeOrigin, eyeAngles, fov  );
 									break;
 

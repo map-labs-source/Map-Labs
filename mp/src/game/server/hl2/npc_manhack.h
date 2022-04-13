@@ -102,9 +102,11 @@ public:
 
 	virtual float	GetHeadTurnRate( void ) { return 45.0f; } // Degrees per second
 
-	void			CheckCollisions(float flInterval);
+	virtual void	CheckCollisions(float flInterval);
 	virtual void	GatherEnemyConditions( CBaseEntity *pEnemy );
-	void			PlayFlySound(void);
+	virtual void	PlayFlySound(void);
+	virtual void	PlayAttackSound(bool bHostile);
+	virtual void	PlayDamagedSound(void);
 	virtual void	StopLoopingSounds(void);
 
 	void			Precache(void);
@@ -113,9 +115,9 @@ public:
 	void			Activate();
 	void			StartTask( const Task_t *pTask );
 
-	void			BladesInit();
-	void			SoundInit( void );
-	void			StartEye( void );
+	virtual void			BladesInit();
+	virtual void			SoundInit( void );
+	virtual void			StartEye( void );
 	
 	bool			HandleInteraction(int interactionType, void* data, CBaseCombatCharacter* sourceEnt);
 
@@ -126,7 +128,7 @@ public:
 
 	void			SpinBlades(float flInterval);
 
-	void			Slice( CBaseEntity *pHitEntity, float flInterval, trace_t &tr );
+	virtual void	Slice( CBaseEntity *pHitEntity, float flInterval, trace_t &tr );
 	void			Bump( CBaseEntity *pHitEntity, float flInterval, trace_t &tr );
 	void			Splash( const Vector &vecSplashPos );
 
@@ -170,6 +172,7 @@ public:
 		m_iHealth = 0;
 	}
 
+	virtual void SetEyeState(int state);
 
 	DEFINE_CUSTOM_AI;
 
@@ -184,9 +187,8 @@ private:
 	void StopBurst( bool bInterruptSchedule = false );
 
 	void UpdatePanels( void );
-	void SetEyeState( int state );
 
-	void ShowHostile( bool hostile = true );
+
 
 	bool IsFlyingActivity( Activity baseAct );
 
@@ -205,6 +207,7 @@ private:
 	// Are we being held by the physcannon?
 	bool IsHeldByPhyscannon( );
 
+	void ShowHostile(bool hostile = true);
 	void StartLoitering( const Vector &vecLoiterPosition );
 	void StopLoitering() { m_vecLoiterPosition = vec3_invalid; m_fTimeNextLoiterPulse = gpGlobals->curtime; }
 	bool IsLoitering() { return m_vecLoiterPosition != vec3_invalid; }

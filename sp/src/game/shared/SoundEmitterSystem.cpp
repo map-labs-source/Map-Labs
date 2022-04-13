@@ -130,6 +130,19 @@ void Hack_FixEscapeChars( char *str )
 	Q_strncpy( str, osave, len );
 }
 
+#ifdef MAPBASE
+static const ConVar *pHostTimescale;
+
+static float GetSoundPitchScale()
+{
+	static ConVarRef sv_cheats( "sv_cheats" );
+	if (sv_cheats.GetBool())
+		return pHostTimescale->GetFloat();
+
+	return 1.0f;
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -323,6 +336,10 @@ public:
 			}
 		}
 #endif
+
+#ifdef MAPBASE
+		pHostTimescale = cvar->FindVar( "host_timescale" );
+#endif
 	}
 
 	virtual void LevelInitPostEntity()
@@ -494,7 +511,7 @@ public:
 			params.soundname, 
 			params.soundlevel, 
 			params.volume, 
-			ep.m_nFlags, 
+			ep.m_nFlags | SND_SHOULDPAUSE, 
 			params.pitch, 
 			ep.m_pOrigin, 
 			ep.m_flSoundTime,
@@ -524,8 +541,12 @@ public:
 			params.soundname,
 			params.volume,
 			(soundlevel_t)params.soundlevel,
-			ep.m_nFlags,
+			ep.m_nFlags | SND_SHOULDPAUSE,
+#ifdef MAPBASE
+			params.pitch * GetSoundPitchScale(),
+#else
 			params.pitch,
+#endif
 			ep.m_nSpecialDSP,
 			ep.m_pOrigin,
 			NULL,
@@ -575,7 +596,7 @@ public:
 				ep.m_pSoundName, 
 				ep.m_SoundLevel, 
 				ep.m_flVolume, 
-				ep.m_nFlags, 
+				ep.m_nFlags | SND_SHOULDPAUSE,
 				ep.m_nPitch, 
 				ep.m_pOrigin, 
 				ep.m_flSoundTime,
@@ -603,8 +624,12 @@ public:
 				ep.m_pSoundName, 
 				ep.m_flVolume, 
 				ep.m_SoundLevel, 
-				ep.m_nFlags, 
+				ep.m_nFlags | SND_SHOULDPAUSE,
+#ifdef MAPBASE
+				ep.m_nPitch * GetSoundPitchScale(),
+#else
 				ep.m_nPitch, 
+#endif
 				ep.m_nSpecialDSP,
 				ep.m_pOrigin,
 				NULL, 
@@ -826,10 +851,14 @@ public:
 			params.volume = flVolume;
 		}
 
+#ifdef MAPBASE
+		params.pitch *= GetSoundPitchScale();
+#endif
+
 #if defined( CLIENT_DLL )
-		enginesound->EmitAmbientSound( params.soundname, params.volume, params.pitch, iFlags, soundtime );
+		enginesound->EmitAmbientSound( params.soundname, params.volume, params.pitch, iFlags | SND_SHOULDPAUSE, soundtime );
 #else
-		engine->EmitAmbientSound(entindex, origin, params.soundname, params.volume, params.soundlevel, iFlags, params.pitch, soundtime );
+		engine->EmitAmbientSound(entindex, origin, params.soundname, params.volume, params.soundlevel, iFlags | SND_SHOULDPAUSE, params.pitch, soundtime );
 #endif
 
 		bool needsCC = !( iFlags & ( SND_STOP | SND_CHANGE_VOL | SND_CHANGE_PITCH ) );
@@ -954,6 +983,10 @@ public:
 
 		if ( pSample && ( Q_stristr( pSample, ".wav" ) || Q_stristr( pSample, ".mp3" )) )
 		{
+#ifdef MAPBASE
+			pitch *= GetSoundPitchScale();
+#endif
+
 #if defined( CLIENT_DLL )
 			enginesound->EmitAmbientSound( pSample, volume, pitch, flags, soundtime );
 #else
@@ -1187,6 +1220,24 @@ void CBaseEntity::EmitSound( const char *soundname, HSOUNDSCRIPTHANDLE& handle, 
 	EmitSound( filter, entindex(), params, handle );
 }
 
+#if !defined ( CLIENT_DLL ) || defined( MAPBASE_VSCRIPT )
+void CBaseEntity::ScriptEmitSound( const char *soundname )
+{
+	EmitSound( soundname );
+}
+
+void CBaseEntity::ScriptStopSound( const char *soundname )
+{
+	StopSound( soundname );
+}
+
+float CBaseEntity::ScriptSoundDuration( const char *soundname, const char *actormodel )
+{
+	float duration = CBaseEntity::GetSoundDuration( soundname, actormodel );
+	return duration;
+}
+#endif // !CLIENT
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : filter - 
@@ -1385,7 +1436,7 @@ void UTIL_EmitAmbientSound( int entindex, const Vector &vecOrigin, const char *s
 #if !defined( CLIENT_DLL )
 			engine->EmitAmbientSound( entindex, vecOrigin, name, vol, soundlevel, fFlags, pitch, soundtime );
 #else
-			enginesound->EmitAmbientSound( name, vol, pitch, fFlags, soundtime );
+			enginesound->EmitAmbientSound( name, vol, pitch, fFlags | SND_SHOULDPAUSE, soundtime );
 #endif
 			if ( duration )
 			{
@@ -1420,7 +1471,17 @@ static const char *UTIL_TranslateSoundName( const char *soundname, const char *a
 
 void CBaseEntity::GenderExpandString( char const *in, char *out, int maxlen )
 {
+#ifdef MAPBASE
+	// This is so models without globalactors.txt declarations can still play scenes.
+	gender_t gender = soundemitterbase->GetActorGender(STRING(GetModelName()));
+
+	if (gender == GENDER_NONE)
+		gender = GENDER_MALE;
+
+	soundemitterbase->GenderExpandString(gender, in, out, maxlen);
+#else
 	soundemitterbase->GenderExpandString( STRING( GetModelName() ), in, out, maxlen );
+#endif
 }
 
 bool CBaseEntity::GetParametersForSound( const char *soundname, CSoundParameters &params, const char *actormodel )
@@ -1445,6 +1506,14 @@ HSOUNDSCRIPTHANDLE CBaseEntity::PrecacheScriptSound( const char *soundname )
 	return soundemitterbase->GetSoundIndex( soundname );
 #endif
 }
+
+#if !defined ( CLIENT_DLL ) || defined( MAPBASE_VSCRIPT )
+// Same as server version of above, but signiture changed so it can be deduced by the macros
+void CBaseEntity::VScriptPrecacheScriptSound(const char* soundname)
+{
+	g_SoundEmitterSystem.PrecacheScriptSound(soundname);
+}
+#endif // !CLIENT_DLL
 
 void CBaseEntity::PrefetchScriptSound( const char *soundname )
 {

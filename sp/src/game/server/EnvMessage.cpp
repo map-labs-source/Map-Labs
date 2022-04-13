@@ -168,6 +168,11 @@ private:
 
 	bool		m_bRolledOutroCredits;
 	float		m_flLogoLength;
+
+#ifdef MAPBASE
+	// Custom credits.txt, defaults to that
+	string_t	m_iszCreditsFile;
+#endif
 };
 
 LINK_ENTITY_TO_CLASS( env_credits, CCredits );
@@ -178,6 +183,10 @@ BEGIN_DATADESC( CCredits )
 	DEFINE_INPUTFUNC( FIELD_VOID, "ShowLogo", InputShowLogo ),
 	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetLogoLength", InputSetLogoLength ),
 	DEFINE_OUTPUT( m_OnCreditsDone, "OnCreditsDone"),
+
+#ifdef MAPBASE
+	DEFINE_KEYFIELD( m_iszCreditsFile, FIELD_STRING, "CreditsFile" ),
+#endif
 
 	DEFINE_FIELD( m_bRolledOutroCredits, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flLogoLength, FIELD_FLOAT )
@@ -203,6 +212,10 @@ static ConCommand creditsdone("creditsdone", CreditsDone_f );
 
 extern ConVar sv_unlockedchapters;
 
+#ifdef MAPBASE
+extern int Mapbase_GetChapterCount();
+#endif
+
 void CCredits::OnRestore()
 {
 	BaseClass::OnRestore();
@@ -217,6 +230,10 @@ void CCredits::OnRestore()
 
 void CCredits::RollOutroCredits()
 {
+#ifdef MAPBASE
+	// Don't set this if we're using Mapbase chapters or if sv_unlockedchapters is already greater than 15
+	if (Mapbase_GetChapterCount() <= 0 && sv_unlockedchapters.GetInt() < 15)
+#endif
 	sv_unlockedchapters.SetValue( "15" );
 	
 	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
@@ -226,6 +243,9 @@ void CCredits::RollOutroCredits()
 
 	UserMessageBegin( user, "CreditsMsg" );
 		WRITE_BYTE( 3 );
+#ifdef MAPBASE
+		WRITE_STRING( STRING(m_iszCreditsFile) );
+#endif
 	MessageEnd();
 }
 
@@ -250,12 +270,18 @@ void CCredits::InputShowLogo( inputdata_t &inputdata )
 	{
 		UserMessageBegin( user, "LogoTimeMsg" );
 			WRITE_FLOAT( m_flLogoLength );
+#ifdef MAPBASE
+			WRITE_STRING( STRING(m_iszCreditsFile) );
+#endif
 		MessageEnd();
 	}
 	else
 	{
 		UserMessageBegin( user, "CreditsMsg" );
 			WRITE_BYTE( 1 );
+#ifdef MAPBASE
+			WRITE_STRING( STRING(m_iszCreditsFile) );
+#endif
 		MessageEnd();
 	}
 }
@@ -274,5 +300,8 @@ void CCredits::InputRollCredits( inputdata_t &inputdata )
 
 	UserMessageBegin( user, "CreditsMsg" );
 		WRITE_BYTE( 2 );
+#ifdef MAPBASE
+		WRITE_STRING( STRING(m_iszCreditsFile) );
+#endif
 	MessageEnd();
 }

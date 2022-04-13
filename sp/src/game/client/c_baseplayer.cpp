@@ -54,6 +54,10 @@
 #include "econ_wearable.h"
 #endif
 
+#ifdef MAPBASE
+#include "viewrender.h"
+#endif
+
 // NVNT haptics system interface
 #include "haptics/ihaptics.h"
 
@@ -129,6 +133,16 @@ void RecvProxy_LocalVelocityZ( const CRecvProxyData *pData, void *pStruct, void 
 void RecvProxy_ObserverTarget( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_ObserverMode  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
+#ifdef MAPBASE
+// Needs to shift bits back
+void RecvProxy_ShiftPlayerSpawnflags( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	C_BasePlayer *pPlayer = (C_BasePlayer *)pStruct;
+
+	pPlayer->m_spawnflags = (pData->m_Value.m_Int) << 16;
+}
+#endif
+
 // -------------------------------------------------------------------------------- //
 // RecvTable for CPlayerState.
 // -------------------------------------------------------------------------------- //
@@ -176,6 +190,11 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	// 3d skybox data
 	RecvPropInt(RECVINFO(m_skybox3d.scale)),
 	RecvPropVector(RECVINFO(m_skybox3d.origin)),
+#ifdef MAPBASE
+	RecvPropVector(RECVINFO(m_skybox3d.angles)),
+	RecvPropEHandle(RECVINFO(m_skybox3d.skycamera)),
+	RecvPropInt( RECVINFO( m_skybox3d.skycolor ), 0, RecvProxy_IntToColor32 ),
+#endif
 	RecvPropInt(RECVINFO(m_skybox3d.area)),
 
 	// 3d skybox fog data
@@ -187,6 +206,9 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.start ) ),
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.end ) ),
 	RecvPropFloat( RECVINFO( m_skybox3d.fog.maxdensity ) ),
+#ifdef MAPBASE
+	RecvPropFloat( RECVINFO( m_skybox3d.fog.farz ) ),
+#endif
 
 	// fog data
 	RecvPropEHandle( RECVINFO( m_PlayerFog.m_hCtrl ) ),
@@ -203,6 +225,14 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropInt( RECVINFO( m_audio.soundscapeIndex ) ),
 	RecvPropInt( RECVINFO( m_audio.localBits ) ),
 	RecvPropEHandle( RECVINFO( m_audio.ent ) ),
+
+	//Tony; tonemap stuff! -- TODO! Optimize this with bit sizes from env_tonemap_controller.
+	RecvPropFloat ( RECVINFO( m_TonemapParams.m_flTonemapScale ) ),
+	RecvPropFloat ( RECVINFO( m_TonemapParams.m_flTonemapRate ) ),
+	RecvPropFloat ( RECVINFO( m_TonemapParams.m_flBloomScale ) ),
+
+	RecvPropFloat ( RECVINFO( m_TonemapParams.m_flAutoExposureMin ) ),
+	RecvPropFloat ( RECVINFO( m_TonemapParams.m_flAutoExposureMax ) ),
 END_RECV_TABLE()
 
 // -------------------------------------------------------------------------------- //
@@ -244,6 +274,14 @@ END_RECV_TABLE()
 
 		RecvPropInt			( RECVINFO( m_nWaterLevel ) ),
 		RecvPropFloat		( RECVINFO( m_flLaggedMovementValue )),
+
+#ifdef MAPBASE
+		// Transmitted from the server for internal player spawnflags.
+		// See baseplayer_shared.h for more details.
+		RecvPropInt			( RECVINFO( m_spawnflags ), 0, RecvProxy_ShiftPlayerSpawnflags ),
+
+		RecvPropBool		( RECVINFO( m_bDrawPlayerModelExternally ) ),
+#endif
 
 	END_RECV_TABLE()
 
@@ -292,6 +330,8 @@ END_RECV_TABLE()
 		
 
 		RecvPropString( RECVINFO(m_szLastPlaceName) ),
+
+		RecvPropEHandle(RECVINFO(m_hPostProcessCtrl)),		// Send to everybody - for spectating
 
 #if defined USES_ECON_ITEMS
 		RecvPropUtlVector( RECVINFO_UTLVECTOR( m_hMyWearables ), MAX_WEARABLES_SENT_FROM_SERVER,	RecvPropEHandle(NULL, 0, 0) ),
@@ -396,7 +436,10 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 
 END_PREDICTION_DATA()
 
+// link this in each derived player class, like the server!!
+#if 0
 LINK_ENTITY_TO_CLASS( player, C_BasePlayer );
+#endif
 
 // -------------------------------------------------------------------------------- //
 // Functions.
@@ -449,6 +492,13 @@ C_BasePlayer::~C_BasePlayer()
 	if ( this == s_pLocalPlayer )
 	{
 		s_pLocalPlayer = NULL;
+
+#ifdef MAPBASE_VSCRIPT
+		if ( g_pScriptVM )
+		{
+			g_pScriptVM->SetValue( "player", SCRIPT_VARIANT_NULL );
+		}
+#endif
 	}
 
 	delete m_pFlashlight;
@@ -805,6 +855,14 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 			// changed level, which would cause the snd_soundmixer to be left modified.
 			ConVar *pVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
 			pVar->Revert();
+
+#ifdef MAPBASE_VSCRIPT
+			// Moved here from LevelInitPostEntity, which is executed before local player is spawned.
+			if ( g_pScriptVM )
+			{
+				g_pScriptVM->SetValue( "player", GetScriptInstance() );
+			}
+#endif
 		}
 	}
 
@@ -945,6 +1003,16 @@ void C_BasePlayer::OnRestore()
 		input->ClearInputButton( IN_ATTACK | IN_ATTACK2 );
 		// GetButtonBits() has to be called for the above to take effect
 		input->GetButtonBits( 0 );
+
+#ifdef MAPBASE_VSCRIPT
+		// HACK: (03/25/09) Then the player goes across a transition it doesn't spawn and register
+		// it's instance. We're hacking around this for now, but this will go away when we get around to 
+		// having entities cross transitions and keep their script state.
+		if ( g_pScriptVM )
+		{
+			g_pScriptVM->SetValue( "player", GetScriptInstance() );
+		}
+#endif
 	}
 
 	// For ammo history icons to current value so they don't flash on level transtions
@@ -1054,6 +1122,16 @@ void C_BasePlayer::DetermineVguiInputMode( CUserCmd *pCmd )
 
 	// If we're in vgui mode *and* we're holding down mouse buttons,
 	// stay in vgui mode even if we're outside the screen bounds
+#ifdef VGUI_SCREEN_FIX
+	if (m_pCurrentVguiScreen.Get() && (pCmd->buttons & (IN_ATTACK | IN_ATTACK2 | IN_VALIDVGUIINPUT)))
+	{
+		SetVGuiScreenButtonState( m_pCurrentVguiScreen.Get(), pCmd->buttons );
+
+		// Kill all attack inputs if we're in vgui screen mode
+		pCmd->buttons &= ~(IN_ATTACK | IN_ATTACK2 | IN_VALIDVGUIINPUT);
+		return;
+	}
+#else
 	if (m_pCurrentVguiScreen.Get() && (pCmd->buttons & (IN_ATTACK | IN_ATTACK2)) )
 	{
 		SetVGuiScreenButtonState( m_pCurrentVguiScreen.Get(), pCmd->buttons );
@@ -1062,6 +1140,7 @@ void C_BasePlayer::DetermineVguiInputMode( CUserCmd *pCmd )
 		pCmd->buttons &= ~(IN_ATTACK | IN_ATTACK2);
 		return;
 	}
+#endif
 
 	// We're not in vgui input mode if we're moving, or have hit a key
 	// that will make us move...
@@ -1183,7 +1262,12 @@ bool C_BasePlayer::CreateMove( float flInputSampleTime, CUserCmd *pCmd )
 	m_vecOldViewAngles = pCmd->viewangles;
 	
 	// Check to see if we're in vgui input mode...
+#ifdef VGUI_SCREEN_FIX
+	if(pCmd->buttons & IN_VALIDVGUIINPUT)
+		DetermineVguiInputMode( pCmd );
+#else
 	DetermineVguiInputMode( pCmd );
+#endif
 
 	return true;
 }
@@ -1385,11 +1469,34 @@ bool C_BasePlayer::ShouldInterpolate()
 
 bool C_BasePlayer::ShouldDraw()
 {
+#ifdef MAPBASE
+	// We have to "always draw" a player with m_bDrawPlayerModelExternally in order to show up in whatever rendering list all of the views use, 
+	// but we can't put this in ShouldDrawThisPlayer() because we would have no way of knowing if it stomps the other checks that draw the player model anyway.
+	// As a result, we have to put it here in the central ShouldDraw() function. DrawModel() makes sure we only draw in non-main views and nothing's drawing the model anyway.
+	return (ShouldDrawThisPlayer() || m_bDrawPlayerModelExternally) && BaseClass::ShouldDraw();
+#else
 	return ShouldDrawThisPlayer() && BaseClass::ShouldDraw();
+#endif
 }
 
 int C_BasePlayer::DrawModel( int flags )
 {
+#ifdef MAPBASE
+	if (m_bDrawPlayerModelExternally)
+	{
+		// Draw the player in any view except the main or "intro" view, both of which are default first-person views.
+		view_id_t viewID = CurrentViewID();
+		if (viewID == VIEW_MAIN || viewID == VIEW_INTRO_CAMERA)
+		{
+			// Make sure the player model wouldn't draw anyway...
+			if (!ShouldDrawThisPlayer())
+				return 0;
+		}
+
+		return BaseClass::DrawModel( flags );
+	}
+#endif
+
 #ifndef PORTAL
 	// In Portal this check is already performed as part of
 	// C_Portal_Player::DrawModel()
@@ -1398,6 +1505,7 @@ int C_BasePlayer::DrawModel( int flags )
 		return 0;
 	}
 #endif
+
 	return BaseClass::DrawModel( flags );
 }
 
@@ -1522,7 +1630,14 @@ void C_BasePlayer::CalcChaseCamView(Vector& eyeOrigin, QAngle& eyeAngles, float&
 		}
 	}
 
-	if ( target && !target->IsPlayer() && target->IsNextBot() )
+	// SDK TODO
+	if ( target && target->IsBaseTrain() )
+	{
+		// if this is a train, we want to be back a little further so we can see more of it
+		flMaxDistance *= 2.5f;
+		m_flObserverChaseDistance = flMaxDistance;
+	}
+	else if ( target && !target->IsPlayer() && target->IsNextBot() )
 	{
 		// if this is a boss, we want to be back a little further so we can see more of it
 		flMaxDistance *= 2.5f;
@@ -1854,6 +1969,12 @@ void C_BasePlayer::ThirdPersonSwitch( bool bThirdperson )
 				}
 			}
 		}
+	}
+	else
+	{
+		CBaseCombatWeapon *pWeapon = GetActiveWeapon();
+		if ( pWeapon )
+			pWeapon->ThirdPersonSwitch( bThirdperson );
 	}
 }
 
@@ -2794,6 +2915,14 @@ void C_BasePlayer::UpdateFogBlend( void )
 				
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+C_PostProcessController* C_BasePlayer::GetActivePostProcessController() const
+{
+	return m_hPostProcessCtrl.Get();
 }
 
 //-----------------------------------------------------------------------------

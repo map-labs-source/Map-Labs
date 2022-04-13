@@ -114,6 +114,9 @@ ConVar v_viewmodel_fov( "viewmodel_fov", "54", FCVAR_ARCHIVE );
 #else
 ConVar v_viewmodel_fov( "viewmodel_fov", "54", FCVAR_CHEAT );
 #endif
+#ifdef CSS_WEAPONS_IN_HL2 // This code originates from Mapbase v7.0. In the event of a merge conflict, it should take precedence over this code.
+ConVar v_viewmodel_fov_script_override( "viewmodel_fov_script_override", "0", FCVAR_NONE, "If nonzero, overrides the viewmodel FOV of weapon scripts which override the viewmodel FOV." );
+#endif
 ConVar mat_viewportscale( "mat_viewportscale", "1.0", FCVAR_ARCHIVE, "Scale down the main viewport (to reduce GPU impact on CPU profiling)", true, (1.0f / 640.0f), true, 1.0f );
 ConVar mat_viewportupscale( "mat_viewportupscale", "1", FCVAR_ARCHIVE, "Scale the viewport back up" );
 ConVar cl_leveloverview( "cl_leveloverview", "0", FCVAR_CHEAT );
@@ -126,6 +129,9 @@ ConVar	gl_clear( "gl_clear", "0");
 ConVar	gl_clear_randomcolor( "gl_clear_randomcolor", "0", FCVAR_CHEAT, "Clear the back buffer to random colors every frame. Helps spot open seams in geometry." );
 
 static ConVar r_farz( "r_farz", "-1", FCVAR_CHEAT, "Override the far clipping plane. -1 means to use the value in env_fog_controller." );
+#ifdef MAPBASE
+static ConVar r_nearz( "r_nearz", "-1", FCVAR_CHEAT, "Override the near clipping plane. -1 means to use the default value (usually 7)." );
+#endif
 static ConVar cl_demoviewoverride( "cl_demoviewoverride", "0", 0, "Override view during demo playback" );
 
 
@@ -602,6 +608,11 @@ static QAngle s_DbgSetupAngles;
 //-----------------------------------------------------------------------------
 float CViewRender::GetZNear()
 {
+#ifdef MAPBASE
+	if (r_nearz.GetFloat() > 0)
+		return r_nearz.GetFloat();
+#endif
+
 	return VIEW_NEARZ;
 }
 
@@ -666,6 +677,10 @@ void CViewRender::SetUpViews()
 	bool bCalcViewModelView = false;
 	Vector ViewModelOrigin;
 	QAngle ViewModelAngles;
+	
+#ifdef CSS_WEAPONS_IN_HL2 // This code originates from Mapbase v7.0. In the event of a merge conflict, it should take precedence over this code.
+	view.fovViewmodel = g_pClientMode->GetViewModelFOV();
+#endif
 
 	if ( engine->IsHLTV() )
 	{
@@ -702,6 +717,18 @@ void CViewRender::SetUpViews()
 			bCalcViewModelView = true;
 			ViewModelOrigin = view.origin;
 			ViewModelAngles = view.angles;
+			
+#ifdef CSS_WEAPONS_IN_HL2 // This code originates from Mapbase v7.0. In the event of a merge conflict, it should take precedence over this code.
+			// Allow weapons to override viewmodel FOV
+			C_BaseCombatWeapon *pWeapon = pPlayer->GetActiveWeapon();
+			if (pWeapon && pWeapon->GetWpnData().m_flViewmodelFOV != 0.0f)
+			{
+				if (v_viewmodel_fov_script_override.GetFloat() > 0.0f)
+					view.fovViewmodel = v_viewmodel_fov_script_override.GetFloat();
+				else
+					view.fovViewmodel = pWeapon->GetWpnData().m_flViewmodelFOV;
+			}
+#endif
 		}
 		else
 		{
@@ -736,7 +763,11 @@ void CViewRender::SetUpViews()
 	float flFOVOffset = fDefaultFov - view.fov;
 
 	//Adjust the viewmodel's FOV to move with any FOV offsets on the viewer's end
+#ifdef CSS_WEAPONS_IN_HL2 // This code originates from Mapbase v7.0. In the event of a merge conflict, it should take precedence over this code.
+	view.fovViewmodel = max(0.001f, view.fovViewmodel - flFOVOffset);
+#else
 	view.fovViewmodel = g_pClientMode->GetViewModelFOV() - flFOVOffset;
+#endif
 
 	if ( UseVR() )
 	{

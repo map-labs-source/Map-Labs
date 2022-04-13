@@ -205,7 +205,7 @@ BEGIN_DATADESC( CNPC_BaseZombie )
 
 	DEFINE_SOUNDPATCH( m_pMoanSound ),
 	DEFINE_FIELD( m_fIsTorso, FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_fIsHeadless, FIELD_BOOLEAN ),
+	DEFINE_KEYFIELD( m_fIsHeadless, FIELD_BOOLEAN, "Headless" ),
 	DEFINE_FIELD( m_flNextFlinch, FIELD_TIME ),
 	DEFINE_FIELD( m_bHeadShot, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flBurnDamage, FIELD_FLOAT ),
@@ -761,7 +761,7 @@ bool CNPC_BaseZombie::ShouldBecomeTorso( const CTakeDamageInfo &info, float flDa
 //-----------------------------------------------------------------------------
 HeadcrabRelease_t CNPC_BaseZombie::ShouldReleaseHeadcrab( const CTakeDamageInfo &info, float flDamageThreshold )
 {
-	if ( m_iHealth <= 0 )
+	if ( m_iHealth <= 0 && !this->m_fIsHeadless)
 	{
 		if ( info.GetDamageType() & DMG_REMOVENORAGDOLL )
 			return RELEASE_NO;

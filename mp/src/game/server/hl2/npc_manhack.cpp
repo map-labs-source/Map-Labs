@@ -764,7 +764,7 @@ int	CNPC_Manhack::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		m_vForceVelocity = vecBestDir * info.GetDamage() * 0.5f;
 		m_flBladeSpeed = 10.0;
 
-		EmitSound( "NPC_Manhack.Bat" );	
+		PlayDamagedSound();
 
 		// tdInfo.SetDamage( 1.0 );
 
@@ -3135,15 +3135,35 @@ void CNPC_Manhack::ShowHostile( bool hostile /*= true*/)
 	//TODO: Open the manhack panels or close them, depending on the state
 	m_bShowingHostile = hostile;
 
-	if ( hostile )
+	PlayAttackSound(hostile);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Play a sound before charging at the player
+// Input  : hostile - 
+//-----------------------------------------------------------------------------
+void CNPC_Manhack::PlayAttackSound(bool hostile /*= true*/)
+{
+	if (hostile)
 	{
-		EmitSound( "NPC_Manhack.ChargeAnnounce" );
+		EmitSound("NPC_Manhack.ChargeAnnounce");
 	}
 	else
 	{
-		EmitSound( "NPC_Manhack.ChargeEnd" );
+		EmitSound("NPC_Manhack.ChargeEnd");
 	}
 }
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Play a sound before charging at the player
+//-----------------------------------------------------------------------------
+void CNPC_Manhack::PlayDamagedSound(void)
+{
+	EmitSound("NPC_Manhack.Bat");
+}
+
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 

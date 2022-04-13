@@ -33,6 +33,12 @@ extern ConVar in_forceuser;
 #define VIEWMODEL_ANIMATION_PARITY_BITS 3
 #define SCREEN_OVERLAY_MATERIAL "vgui/screens/vgui_overlay"
 
+#if defined( CLIENT_DLL )
+ConVar viewmodel_offset_x("viewmodel_offset_x", "0.0", FCVAR_ARCHIVE);	 // the viewmodel offset from default in X
+ConVar viewmodel_offset_y("viewmodel_offset_y", "0.0", FCVAR_ARCHIVE);	 // the viewmodel offset from default in Y
+ConVar viewmodel_offset_z("viewmodel_offset_z", "0.0", FCVAR_ARCHIVE);	 // the viewmodel offset from default in Z
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -390,6 +396,14 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 	QAngle vmangles = eyeAngles;
 	Vector vmorigin = eyePosition;
 
+	// viewmodel_offset Commands
+	Vector vecRight;
+	Vector vecUp;
+	Vector vecForward;
+	AngleVectors(vmangoriginal, &vecForward, &vecRight, &vecUp);
+	//Vector vecOffset = Vector( viewmodel_offset_x.GetFloat(), viewmodel_offset_y.GetFloat(), viewmodel_offset_z.GetFloat() ); 
+	vmorigin += (vecForward * viewmodel_offset_y.GetFloat()) + (vecUp * viewmodel_offset_z.GetFloat()) + (vecRight * viewmodel_offset_x.GetFloat());
+
 	CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
 	//Allow weapon lagging
 	if ( pWeapon != NULL )
@@ -407,15 +421,13 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 	}
 	// Add model-specific bob even if no weapon associated (for head bob for off hand models)
 	AddViewModelBob( owner, vmorigin, vmangles );
-#if !defined ( CSTRIKE_DLL )
-	// This was causing weapon jitter when rotating in updated CS:S; original Source had this in above InPrediction block  07/14/10
-	// Add lag
-	CalcViewModelLag( vmorigin, vmangles, vmangoriginal );
-#endif
 
 #if defined( CLIENT_DLL )
 	if ( !prediction->InPrediction() )
 	{
+		// Add lag
+		CalcViewModelLag( vmorigin, vmangles, vmangoriginal );
+
 		// Let the viewmodel shake at about 10% of the amplitude of the player's view
 		vieweffects->ApplyShake( vmorigin, vmangles, 0.1 );	
 	}
@@ -425,6 +437,21 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 	{
 		g_ClientVirtualReality.OverrideViewModelTransform( vmorigin, vmangles, pWeapon && pWeapon->ShouldUseLargeViewModelVROverride() );
 	}
+
+#ifdef CSS_WEAPONS_IN_HL2 // This code originates from Mapbase v7.0. In the event of a merge conflict, it should take precedence over this code.
+	// Flip the view if we should be flipping
+	if (ShouldFlipViewModel())
+	{
+		Vector vecOriginDiff = (eyePosition - vmorigin);
+		QAngle angAnglesDiff = (eyeAngles - vmangles);
+
+		vmorigin.x = (eyePosition.x + vecOriginDiff.x);
+		vmorigin.y = (eyePosition.y + vecOriginDiff.y);
+		
+		vmangles.y = (eyeAngles.y + angAnglesDiff.y);
+		vmangles.z = (eyeAngles.z + angAnglesDiff.z);
+	}
+#endif
 
 	SetLocalOrigin( vmorigin );
 	SetLocalAngles( vmangles );

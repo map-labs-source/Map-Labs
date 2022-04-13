@@ -78,7 +78,9 @@ $Project
 			$File	"mapbase\SystemConvarMod.h"
 			$File	"mapbase\variant_tools.h"
 			$File	"mapbase\vgui_text_display.cpp"
-			$File   "mapbase\npc_houndeye.cpp"
+      
+      // TODO: Move to "lab" folder and episodic VPC
+			$File "mapbase\npc_houndeye.cpp"
 			
 			$File	"mapbase\hl2_player_talker.cpp" [$HL2_PLAYER_TALKER]
 			$File	"mapbase\hl2_player_talker.h" [$HL2_PLAYER_TALKER]
