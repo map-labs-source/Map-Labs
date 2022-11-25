@@ -728,7 +728,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
 				lightState.m_bAmbientLight = false;
 				lightState.m_nNumLights = 0;
 
-				s_pShaderAPI->BindStandardTexture(SAMPLER_LIGHTMAP, TEXTURE_LIGHTMAP_BUMPED);
+				pShaderAPI->BindStandardTexture(SAMPLER_LIGHTMAP, TEXTURE_LIGHTMAP_BUMPED);
 			}
             
 			// WRD: Model Lightmapping Technologies!!... needs to be specified manually in SP
