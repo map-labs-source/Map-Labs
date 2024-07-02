@@ -128,7 +128,17 @@ void CBase_CSS_HL2_Pistol::FireNPCPrimaryAttack( CBaseCombatCharacter *pOperator
 	CSoundEnt::InsertSound( SOUND_COMBAT|SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_PISTOL_CSS, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );
 
 	WeaponSound( SINGLE_NPC );
-	pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2, -1, -1, round( GetAmmoDef()->NPCDamage( m_iPrimaryAmmoType ) * GetNPCDamageMultiplier() ) );
+
+	FireBulletsInfo_t info( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType );
+	info.m_iTracerFreq = 2;
+
+	if (GetNPCDamageMultiplier() != 1.0f)
+	{
+		info.m_flDamage = round( GetAmmoDef()->NPCDamage( info.m_iAmmoType ) * GetNPCDamageMultiplier() );
+		info.m_nFlags |= FIRE_BULLETS_NO_AUTO_GIB_TYPE;
+	}
+
+	pOperator->FireBullets( info );
 
 	pOperator->DoMuzzleFlash();
 	m_iClip1 = m_iClip1 - 1;
@@ -252,6 +262,7 @@ void CBase_CSS_HL2_Pistol::PrimaryAttack( void )
 	if (GetDamageMultiplier() != 1.0f)
 	{
 		info.m_flDamage = round( GetAmmoDef()->PlrDamage( info.m_iAmmoType ) * GetDamageMultiplier() );
+		info.m_nFlags |= FIRE_BULLETS_NO_AUTO_GIB_TYPE;
 	}
 
 	info.m_iTracerFreq = 2;
@@ -455,8 +466,17 @@ void CBase_CSS_HL2_MachineGun::FireNPCPrimaryAttack( CBaseCombatCharacter *pOper
 	WeaponSoundRealtime( SINGLE_NPC );
 
 	CSoundEnt::InsertSound( SOUND_COMBAT|SOUND_CONTEXT_GUNFIRE, pOperator->GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pOperator, SOUNDENT_CHANNEL_WEAPON, pOperator->GetEnemy() );
-	pOperator->FireBullets( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED,
-		MAX_TRACE_LENGTH, m_iPrimaryAmmoType, 2, entindex(), 0, round( GetAmmoDef()->NPCDamage( m_iPrimaryAmmoType ) * GetNPCDamageMultiplier() ) );
+
+	FireBulletsInfo_t info( 1, vecShootOrigin, vecShootDir, VECTOR_CONE_PRECALCULATED, MAX_TRACE_LENGTH, m_iPrimaryAmmoType );
+	info.m_iTracerFreq = 2;
+
+	if (GetNPCDamageMultiplier() != 1.0f)
+	{
+		info.m_flDamage = round( GetAmmoDef()->NPCDamage( info.m_iAmmoType ) * GetNPCDamageMultiplier() );
+		info.m_nFlags |= FIRE_BULLETS_NO_AUTO_GIB_TYPE;
+	}
+
+	pOperator->FireBullets( info );
 
 	pOperator->DoMuzzleFlash();
 	m_iClip1 = m_iClip1 - 1;
