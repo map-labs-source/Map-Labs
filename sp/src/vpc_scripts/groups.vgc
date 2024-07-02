@@ -24,6 +24,7 @@ $Group "game"
 	"vgui_controls"
 	"vscript"
 	"responserules"
+	"gamepadui"
 }
 
 $Group "shaderdlls"
@@ -86,5 +87,14 @@ $Group "maptools"
 	"raytrace"
 	"tier1"
 	"vscript"
+}
+
+$Group "gamepadui"
+{
+	"mathlib"
+	"tier1"
+	"vgui_controls"
+	"expanded_steam"
+	"gamepadui"
 }
 
