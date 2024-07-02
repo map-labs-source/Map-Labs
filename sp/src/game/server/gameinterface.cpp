@@ -161,6 +161,9 @@ CTimedEventMgr g_NetworkPropertyEventMgr;
 
 ISaveRestoreBlockHandler *GetEventQueueSaveRestoreBlockHandler();
 ISaveRestoreBlockHandler *GetCommentarySaveRestoreBlockHandler();
+#ifdef MAPBASE
+ISaveRestoreBlockHandler *GetCustomBonusSaveRestoreBlockHandler();
+#endif
 
 CUtlLinkedList<CMapEntityRef, unsigned short> g_MapEntityRefs;
 
@@ -699,6 +702,9 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetEventQueueSaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetAchievementSaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetVScriptSaveRestoreBlockHandler() );
+#ifdef MAPBASE
+	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetCustomBonusSaveRestoreBlockHandler() );
+#endif
 
 	// The string system must init first + shutdown last
 	IGameSystem::Add( GameStringSystem() );
@@ -786,6 +792,9 @@ void CServerGameDLL::DLLShutdown( void )
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetAISaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetPhysSaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetEntitySaveRestoreBlockHandler() );
+#ifdef MAPBASE
+	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetCustomBonusSaveRestoreBlockHandler() );
+#endif
 
 	char *pFilename = g_TextStatsMgr.GetStatsFilename();
 	if ( !pFilename || !pFilename[0] )

@@ -329,6 +329,9 @@ public:
 
 ISaveRestoreBlockHandler *GetEntitySaveRestoreBlockHandler();
 ISaveRestoreBlockHandler *GetViewEffectsRestoreBlockHandler();
+#ifdef MAPBASE
+ISaveRestoreBlockHandler *GetCustomBonusSaveRestoreBlockHandler();
+#endif
 
 CUtlLinkedList<CDataChangedEvent, unsigned short> g_DataChangedEvents;
 ClientFrameStage_t g_CurFrameStage = FRAME_UNDEFINED;
@@ -1107,6 +1110,9 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	if ( !PhysicsDLLInit( physicsFactory ) )
 		return false;
 
+#ifdef MAPBASE
+	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetCustomBonusSaveRestoreBlockHandler() ); // In order for the HUD to get the right info, this must come before the entity block handler
+#endif
 	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetEntitySaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetPhysSaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->AddBlockHandler( GetViewEffectsRestoreBlockHandler() );
@@ -1227,6 +1233,9 @@ void CHLClient::Shutdown( void )
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetViewEffectsRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetPhysSaveRestoreBlockHandler() );
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetEntitySaveRestoreBlockHandler() );
+#ifdef MAPBASE
+	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetCustomBonusSaveRestoreBlockHandler() );
+#endif
 #ifdef MAPBASE_VSCRIPT
 	g_pGameSaveRestoreBlockSet->RemoveBlockHandler( GetVScriptSaveRestoreBlockHandler() );
 #endif

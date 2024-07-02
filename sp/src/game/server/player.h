@@ -745,6 +745,10 @@ public:
 	void	SetArmorValue( int value );
 	void	IncrementArmorValue( int nCount, int nMaxValue = -1 );
 
+#ifdef MAPBASE
+	virtual bool	HidingBonusProgressHUD() { return false; }
+#endif
+
 	void	SetConnected( PlayerConnectedState iConnected ) { m_iConnected = iConnected; }
 	virtual void EquipSuit( bool bPlayEffects = true );
 	virtual void RemoveSuit( void );

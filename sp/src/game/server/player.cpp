@@ -94,6 +94,10 @@
 #include "mapbase/vscript_funcs_shared.h"
 #endif
 
+#ifdef MAPBASE
+#include "point_bonusmaps_accessor.h"
+#endif
+
 ConVar autoaim_max_dist( "autoaim_max_dist", "2160" ); // 2160 = 180 feet
 ConVar autoaim_max_deflect( "autoaim_max_deflect", "0.99" );
 
@@ -552,6 +556,11 @@ BEGIN_ENT_SCRIPTDESC( CBasePlayer, CBaseCombatCharacter, "The player entity." )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetEyeUp, "GetEyeUp", "Gets the player's up eye vector." )
 
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetViewModel, "GetViewModel", "Returns the viewmodel of the specified index." )
+
+	DEFINE_SCRIPTFUNC( GetBonusProgress, "Returns the player's bonus progress." )
+	DEFINE_SCRIPTFUNC( GetBonusChallenge, "Returns the player's bonus challenge." )
+	DEFINE_SCRIPTFUNC( SetBonusProgress, "Sets the player's bonus progress." )
+	DEFINE_SCRIPTFUNC( SetBonusChallenge, "Sets the player's bonus challenge." )
 
 	// 
 	// Hooks
@@ -5291,6 +5300,9 @@ void CBasePlayer::Spawn( void )
 
 	m_iBonusChallenge = sv_bonus_challenge.GetInt();
 	sv_bonus_challenge.SetValue( 0 );
+#ifdef MAPBASE
+	ResolveCustomBonusChallenge( this );
+#endif
 
 	if ( m_iPlayerSound == SOUNDLIST_EMPTY )
 	{
@@ -7328,7 +7340,11 @@ void CBasePlayer::UpdateClientData( void )
 	// Check if the bonus progress HUD element should be displayed
 	if ( m_iBonusChallenge == 0 && m_iBonusProgress == 0 && !( m_Local.m_iHideHUD & HIDEHUD_BONUS_PROGRESS ) )
 		m_Local.m_iHideHUD |= HIDEHUD_BONUS_PROGRESS;
+#ifdef MAPBASE
+	if ( ( m_iBonusChallenge != 0 )&& ( m_Local.m_iHideHUD & HIDEHUD_BONUS_PROGRESS ) && !HidingBonusProgressHUD() )
+#else
 	if ( ( m_iBonusChallenge != 0 )&& ( m_Local.m_iHideHUD & HIDEHUD_BONUS_PROGRESS ) )
+#endif
 		m_Local.m_iHideHUD &= ~HIDEHUD_BONUS_PROGRESS;
 
 	// Let any global rules update the HUD, too
