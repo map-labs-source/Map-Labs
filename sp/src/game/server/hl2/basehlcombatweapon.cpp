@@ -102,6 +102,7 @@ void CHLMachineGun::PrimaryAttack( void )
 	if (GetDamageMultiplier() != 1.0f)
 	{
 		info.m_flDamage = round( GetAmmoDef()->PlrDamage( info.m_iAmmoType ) * GetDamageMultiplier() );
+		info.m_nFlags |= FIRE_BULLETS_NO_AUTO_GIB_TYPE;
 	}
 #endif
 	FireBullets( info );
