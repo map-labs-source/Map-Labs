@@ -86,8 +86,14 @@ struct PBR_Vars_t
 	// Frames
 	int BaseTextureFrame;
 	int BaseTextureFrame2;
-	int DetailFrame;
+//	int DetailFrame;
 	int BumpFrame;
+	int MRAOFrame;
+	int EmissionFrame;
+	int BumpFrame2;
+	int MRAOFrame2;
+	int EmissionFrame2;
+	int EnvMapFrame;
 
 	// Detailtexture implementation
 	//int DetailTexture;
@@ -108,14 +114,20 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
         SHADER_PARAM(FRAME2, SHADER_PARAM_TYPE_INTEGER, "0", "frame number for $basetexture2");
         SHADER_PARAM(ALPHATESTREFERENCE, SHADER_PARAM_TYPE_FLOAT, "0", "");
         SHADER_PARAM(ENVMAP, SHADER_PARAM_TYPE_ENVMAP, "", "Set the cubemap for this material.");
+		SHADER_PARAM(ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "");
         SHADER_PARAM(MRAOTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Texture with metalness in R, roughness in G, ambient occlusion in B, HSV blend in A.");
+		SHADER_PARAM(MRAOFRAME, SHADER_PARAM_TYPE_INTEGER, "", "");
         SHADER_PARAM(MRAOTEXTURE2, SHADER_PARAM_TYPE_TEXTURE, "", "Texture with metalness in R, roughness in G, ambient occlusion in B, HSV blend in A.");
+		SHADER_PARAM(MRAOFRAME2, SHADER_PARAM_TYPE_INTEGER, "", "");
         SHADER_PARAM(EMISSIONTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Emission texture");
+		SHADER_PARAM(EMISSIONFRAME, SHADER_PARAM_TYPE_INTEGER, "", "");
         SHADER_PARAM(EMISSIONTEXTURE2, SHADER_PARAM_TYPE_TEXTURE, "", "Emission texture");
+		SHADER_PARAM(EMISSIONFRAME2, SHADER_PARAM_TYPE_INTEGER, "", "");
         SHADER_PARAM(NORMALTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "Normal texture (deprecated, use $bumpmap)");
         SHADER_PARAM(BUMPMAP, SHADER_PARAM_TYPE_TEXTURE, "", "Normal texture");
 		SHADER_PARAM(BUMPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "frame number for $bumpmap/$normaltexture");
         SHADER_PARAM(BUMPMAP2, SHADER_PARAM_TYPE_TEXTURE, "", "Normal texture");
+		SHADER_PARAM(BUMPFRAME2, SHADER_PARAM_TYPE_INTEGER, "", "frame number for $bumpmap2");
 		SHADER_PARAM(LIGHTMAP, SHADER_PARAM_TYPE_TEXTURE, "", "In MP this gets set automatically if your model has a lightmap, in SP you have to do it yourself.");
         SHADER_PARAM(PARALLAX, SHADER_PARAM_TYPE_BOOL, "0", "Use Parallax Occlusion Mapping.");
         SHADER_PARAM(PARALLAXDEPTH, SHADER_PARAM_TYPE_FLOAT, "0.0030", "Depth of the Parallax Map");
@@ -178,6 +190,12 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
         info.HSV_blend = HSV_BLEND;
 
 		info.BumpFrame = BUMPFRAME;
+		info.MRAOFrame = MRAOFRAME;
+		info.EmissionFrame = EMISSIONFRAME;
+		info.MRAOFrame2 = MRAOFRAME2;
+		info.BumpFrame2 = BUMPFRAME2;
+		info.EmissionFrame2 = EMISSIONFRAME2;
+		info.EnvMapFrame = ENVMAPFRAME;
 
 		// Detail textures...
 		//info.DetailTexture = DETAIL;
@@ -225,11 +243,15 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
 		//	if (!params[BUMPMAP2]->IsDefined())
 		//	params[BUMPMAP2]->SetStringValue("dev/flat_normal");
 
-		if (!params[MRAOTEXTURE2]->IsDefined())
-			params[MRAOTEXTURE2]->SetStringValue("dev/pbr_mraotexture");
-
-        // Set a good default mrao texture
-        if (!params[MRAOTEXTURE]->IsDefined())
+		// WRD : we make a check for Basetexture2 so the annoying error goes away that this texture doesn't even exist...
+		// NOTE: how about including it or entirely removing it, whats the point of this when this texture is not in the base?
+		if (params[BASETEXTURE2]->IsDefined())
+		{
+			if (!params[MRAOTEXTURE2]->IsDefined())
+				params[MRAOTEXTURE2]->SetStringValue("dev/pbr_mraotexture");
+		}
+		
+		if (!params[MRAOTEXTURE]->IsDefined())
             params[MRAOTEXTURE]->SetStringValue("dev/pbr_mraotexture");
 
         // PBR relies heavily on envmaps
@@ -266,11 +288,6 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
 			LoadBumpMap(info.NormalTexture);
 		}
 
-		if (params[BUMPMAP2]->IsDefined())
-		{
-			LoadBumpMap(info.BumpMap2);
-		}
-
 		int envMapFlags = g_pHardwareConfig->GetHDRType() == HDR_TYPE_NONE ? TEXTUREFLAGS_SRGB : 0;
 		// WRD: This does NOT work. If any other material before the pbr one loads the envmap WITHOUT this flag, then loading it again here will NOT add it.
 		//		As a workaround, you can manually flag your cubemaps with the 'No Minimum Mipmap" flag to force this behaviour.
@@ -282,23 +299,12 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
 		if (params[EMISSIONTEXTURE]->IsDefined())
 			LoadTexture(info.EmissionTexture, TEXTUREFLAGS_SRGB);
 
-		if (params[EMISSIONTEXTURE2]->IsDefined())
-			LoadTexture(info.EmissionTexture2, TEXTUREFLAGS_SRGB);
-
 		Assert(info.MRAOTexture >= 0);
 		LoadTexture(info.MRAOTexture, 0);
-
-		Assert(info.MRAOTexture2 >= 0);
-		LoadTexture(info.MRAOTexture2, 0);
 
 		if (params[info.BaseTexture]->IsDefined())
 		{
 			LoadTexture(info.BaseTexture, TEXTUREFLAGS_SRGB);
-		}
-
-		if (params[info.BaseTexture2]->IsDefined())
-		{
-			LoadTexture(info.BaseTexture2, TEXTUREFLAGS_SRGB);
 		}
 
 		//if (params[info.DetailTexture]->IsDefined())
@@ -315,6 +321,11 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
 
         if (IS_FLAG_SET(MATERIAL_VAR_MODEL)) // Set material var2 flags specific to models
         {
+			// WRD : Model Lightmapping uses a texture via parameter.
+			if (params[info.LightmapTexture]->IsDefined())
+			{
+				LoadTexture(info.LightmapTexture, 0);
+			}
             SET_FLAGS2(MATERIAL_VAR2_SUPPORTS_HW_SKINNING);             // Required for skinning
             SET_FLAGS2(MATERIAL_VAR2_DIFFUSE_BUMPMAPPED_MODEL);         // Required for dynamic lighting
             SET_FLAGS2(MATERIAL_VAR2_NEEDS_TANGENT_SPACES);             // Required for dynamic lighting
@@ -329,6 +340,23 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
             SET_FLAGS2(MATERIAL_VAR2_LIGHTING_BUMPED_LIGHTMAP);         // Required for lightmaps
             SET_FLAGS2(MATERIAL_VAR2_SUPPORTS_FLASHLIGHT);              // Required for flashlight
             SET_FLAGS2(MATERIAL_VAR2_USE_FLASHLIGHT);                   // Required for flashlight
+			
+			// WRD: this is wvt stuff, aka only on *not models*
+			if (params[info.BaseTexture2]->IsDefined())
+			{
+				LoadTexture(info.BaseTexture2, TEXTUREFLAGS_SRGB);
+			}
+			
+			if (params[BUMPMAP2]->IsDefined())
+			{
+				LoadBumpMap(info.BumpMap2);
+			}
+		
+			if (params[EMISSIONTEXTURE2]->IsDefined())
+				LoadTexture(info.EmissionTexture2, TEXTUREFLAGS_SRGB);
+			
+			Assert(info.MRAOTexture2 >= 0);
+				LoadTexture(info.MRAOTexture2, 0);
         }
     };
 
@@ -583,7 +611,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
             // Setting up environment map
             if (bHasEnvTexture)
             {
-                BindTexture(SAMPLER_ENVMAP, info.EnvMap, 0);
+                BindTexture(SAMPLER_ENVMAP, info.EnvMap, info.EnvMapFrame);
             }
             else
             {
@@ -599,7 +627,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
             // Setting up emissive texture
             if (bHasEmissionTexture)
             {
-                BindTexture(SAMPLER_EMISSIVE, info.EmissionTexture, 0);
+                BindTexture(SAMPLER_EMISSIVE, info.EmissionTexture, info.EmissionFrame);
             }
 			// This USED TO bind a default black texture, however the shader has a static for Emissiontexture, so if there is no emissiontexture, it can't use one either.
 
@@ -616,7 +644,7 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
             // Setting up mrao map
             if (bHasMraoTexture)
             {
-                BindTexture(SAMPLER_MRAO, info.MRAOTexture, 0);
+                BindTexture(SAMPLER_MRAO, info.MRAOTexture, info.MRAOFrame);
             }
             else
             {
@@ -628,17 +656,17 @@ BEGIN_VS_SHADER(PBR, "PBR shader")
                 BindTexture(SAMPLER_BASETEXTURE2, info.BaseTexture2, info.BaseTextureFrame2);
 
                 if (bHasEmissionTexture2)
-                    BindTexture(SAMPLER_EMISSIVE2, info.EmissionTexture2, 0);
+                    BindTexture(SAMPLER_EMISSIVE2, info.EmissionTexture2, info.EmissionFrame2);
                 else
                     pShaderAPI->BindStandardTexture(SAMPLER_EMISSIVE2, TEXTURE_BLACK);
 
                 if (bHasNormalTexture2)
-                    BindTexture(SAMPLER_NORMAL2, info.BumpMap2, 0);
+                    BindTexture(SAMPLER_NORMAL2, info.BumpMap2, info.BumpFrame2);
                 else
                     pShaderAPI->BindStandardTexture(SAMPLER_NORMAL2, TEXTURE_NORMALMAP_FLAT);
 
                 if (bHasMraoTexture2)
-                    BindTexture(SAMPLER_MRAO2, info.MRAOTexture2, 0);
+                    BindTexture(SAMPLER_MRAO2, info.MRAOTexture2, info.MRAOFrame2);
                 else
                     pShaderAPI->BindStandardTexture(SAMPLER_MRAO2, TEXTURE_WHITE);
 
