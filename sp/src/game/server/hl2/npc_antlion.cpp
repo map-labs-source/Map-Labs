@@ -470,8 +470,13 @@ void CNPC_Antlion::Precache( void )
 #ifdef HL2_EPISODIC
 	if ( IsWorker() )
 	{
+#ifdef MAPBASE
+		PrecacheModel( DefaultOrCustomModel( ANTLION_WORKER_MODEL ) );
+		PropBreakablePrecacheAll( MAKE_STRING( DefaultOrCustomModel( ANTLION_WORKER_MODEL ) ) );
+#else
 		PrecacheModel( ANTLION_WORKER_MODEL );
 		PropBreakablePrecacheAll( MAKE_STRING( ANTLION_WORKER_MODEL ) );
+#endif
 		UTIL_PrecacheOther( "grenade_spit" );
 		PrecacheParticleSystem( "blood_impact_antlion_worker_01" );
 		PrecacheParticleSystem( "antlion_gib_02" );
@@ -480,8 +485,13 @@ void CNPC_Antlion::Precache( void )
 	else
 #endif // HL2_EPISODIC
 	{
+#ifdef MAPBASE
+		PrecacheModel( DefaultOrCustomModel(ANTLION_MODEL) );
+		PropBreakablePrecacheAll( MAKE_STRING( DefaultOrCustomModel( ANTLION_MODEL ) ) );
+#else
 		PrecacheModel( ANTLION_MODEL );
 		PropBreakablePrecacheAll( MAKE_STRING( ANTLION_MODEL ) );
+#endif
 		PrecacheParticleSystem( "blood_impact_antlion_01" );
 		PrecacheParticleSystem( "AntlionGib" );
 	}

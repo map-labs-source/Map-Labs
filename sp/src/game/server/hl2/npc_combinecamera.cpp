@@ -275,7 +275,11 @@ CNPC_CombineCamera::~CNPC_CombineCamera()
 //-----------------------------------------------------------------------------
 void CNPC_CombineCamera::Precache()
 {
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( COMBINE_CAMERA_MODEL ) );
+#else
 	PrecacheModel(COMBINE_CAMERA_MODEL);
+#endif
 	PrecacheModel(COMBINE_CAMERA_GLOW_SPRITE);
 	PrecacheModel(COMBINE_CAMERA_FLASH_SPRITE);
 
@@ -304,8 +308,11 @@ void CNPC_CombineCamera::Precache()
 void CNPC_CombineCamera::Spawn()
 {
 	Precache();
-
+#ifdef MAPBASE
+	SetModel( DefaultOrCustomModel( COMBINE_CAMERA_MODEL ) );
+#else
 	SetModel(COMBINE_CAMERA_MODEL);
+#endif
 
 	m_pEyeFlash = CSprite::SpriteCreate(COMBINE_CAMERA_FLASH_SPRITE, GetLocalOrigin(), FALSE);
 	m_pEyeFlash->SetTransparency(kRenderGlow, 255, 255, 255, 0, kRenderFxNoDissipation);

@@ -133,7 +133,11 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 void CNPC_Fisherman::SelectModel()
 {
+#ifdef MAPBASE
+	SetModelName( AllocPooledString( DefaultOrCustomModel( FISHERMAN_MODEL ) ) );
+#else
 	SetModelName( AllocPooledString( FISHERMAN_MODEL ) );
+#endif
 }
 
 //-----------------------------------------------------------------------------

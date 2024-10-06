@@ -455,7 +455,11 @@ void CNPC_Dog::Spawn( void )
 
 	BaseClass::Spawn();
 
+#ifdef MAPBASE
+	SetModel( DefaultOrCustomModel( "models/dog.mdl" ) );
+#else
 	SetModel( "models/dog.mdl" );
+#endif
 
 	SetHullType( HULL_WIDE_HUMAN );
 	SetHullSizeNormal();
@@ -638,7 +642,11 @@ void CNPC_Dog::PullObject( bool bMantain )
 //-----------------------------------------------------------------------------
 void CNPC_Dog::Precache( void )
 {
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/dog.mdl" ) );
+#else
 	PrecacheModel( "models/dog.mdl" );
+#endif
 	
 	PrecacheScriptSound( "Weapon_PhysCannon.Launch" );
 

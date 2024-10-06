@@ -97,7 +97,11 @@ void CNPC_GMan::Spawn()
 
 	BaseClass::Spawn();
 
+#ifdef MAPBASE
+	SetModel( DefaultOrCustomModel( "models/gman.mdl" ) );
+#else
 	SetModel( "models/gman.mdl" );
+#endif
 
 	SetHullType(HULL_HUMAN);
 	SetHullSizeNormal();
@@ -123,7 +127,11 @@ void CNPC_GMan::Spawn()
 //-----------------------------------------------------------------------------
 void CNPC_GMan::Precache()
 {
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/gman.mdl" ) );
+#else
 	PrecacheModel( "models/gman.mdl" );
+#endif
 	
 	BaseClass::Precache();
 }	

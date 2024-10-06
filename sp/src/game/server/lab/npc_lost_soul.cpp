@@ -135,7 +135,11 @@ void CNPC_LostSoul::InitCustomSchedules(void)
 //-----------------------------------------------------------------------------
 void CNPC_LostSoul::Precache( void )
 {
-	PrecacheModel( "models/skeleton/skeleton_torso3.mdl" ); // Replace this with setting from Hammer
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/skeleton/skeleton_torso3.mdl" ) );
+#else
+	PrecacheModel( "models/skeleton/skeleton_torso3.mdl" );
+#endif
 
 	PrecacheScriptSound("NPC_LostSoul.Die");
 	PrecacheScriptSound("NPC_LostSoul.Burn");
@@ -160,7 +164,11 @@ void CNPC_LostSoul::Spawn( void )
 
 	Precache();
 
+#ifdef MAPBASE
+	SetModel( DefaultOrCustomModel( "models/skeleton/skeleton_torso3.mdl" ) );
+#else
 	SetModel("models/skeleton/skeleton_torso3.mdl");
+#endif
 	SetHullType(HULL_TINY_CENTERED); // There was an error being thrown about collision model being smaller than nav hull - need to look into
 	SetHullSizeNormal();
 

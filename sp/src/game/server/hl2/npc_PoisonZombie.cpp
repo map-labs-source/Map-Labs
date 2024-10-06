@@ -256,7 +256,11 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 void CNPC_PoisonZombie::Precache( void )
 {
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/zombie/poison.mdl" ) );
+#else
 	PrecacheModel("models/zombie/poison.mdl");
+#endif
 
 	PrecacheScriptSound( "NPC_PoisonZombie.Die" );
 	PrecacheScriptSound( "NPC_PoisonZombie.ThrowWarn" );
@@ -509,7 +513,11 @@ void CNPC_PoisonZombie::SetZombieModel( void )
 	}
 	else
 	{
+#ifdef MAPBASE
+		SetModel( DefaultOrCustomModel( "models/zombie/poison.mdl" ) );
+#else
 		SetModel( "models/zombie/poison.mdl" );
+#endif
 		SetHullType(HULL_HUMAN);
 	}
 

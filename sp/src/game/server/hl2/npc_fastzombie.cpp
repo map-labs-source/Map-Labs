@@ -396,7 +396,11 @@ static const char *s_pLegsModel = "models/gibs/fast_zombie_legs.mdl";
 //-----------------------------------------------------------------------------
 void CFastZombie::Precache( void )
 {
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/zombie/fast.mdl" ) );
+#else
 	PrecacheModel("models/zombie/fast.mdl");
+#endif
 #ifdef HL2_EPISODIC
 	PrecacheModel("models/zombie/Fast_torso.mdl");
 	PrecacheScriptSound( "NPC_FastZombie.CarEnter1" );
@@ -768,12 +772,20 @@ void CFastZombie::SetZombieModel( void )
 
 	if ( m_fIsTorso )
 	{
+#ifdef MAPBASE
+		SetModel( DefaultOrCustomModel( "models/zombie/fast_torso.mdl" ) );
+#else
 		SetModel( "models/zombie/fast_torso.mdl" );
+#endif
 		SetHullType(HULL_TINY);
 	}
 	else
 	{
+#ifdef MAPBASE
+		SetModel( DefaultOrCustomModel( "models/zombie/fast.mdl" ) );
+#else
 		SetModel( "models/zombie/fast.mdl" );
+#endif
 		SetHullType(HULL_HUMAN);
 	}
 

@@ -249,7 +249,11 @@ void CNPC_Zombine::Precache( void )
 {
 	BaseClass::Precache();
 
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/zombie/zombie_soldier.mdl" ) );
+#else
 	PrecacheModel( "models/zombie/zombie_soldier.mdl" );
+#endif
 
 	PrecacheScriptSound( "Zombie.FootstepRight" );
 	PrecacheScriptSound( "Zombie.FootstepLeft" );
@@ -270,7 +274,11 @@ void CNPC_Zombine::Precache( void )
 
 void CNPC_Zombine::SetZombieModel( void )
 {
+#ifdef MAPBASE
+	SetModel( DefaultOrCustomModel( "models/zombie/zombie_soldier.mdl" ) );
+#else
 	SetModel( "models/zombie/zombie_soldier.mdl" );
+#endif
 	SetHullType( HULL_HUMAN );
 
 	SetBodygroup( ZOMBIE_BODYGROUP_HEADCRAB, !m_fIsHeadless );

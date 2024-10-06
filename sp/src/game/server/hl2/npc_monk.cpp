@@ -299,7 +299,11 @@ Activity CNPC_Monk::NPC_TranslateActivity( Activity eNewActivity )
 //-----------------------------------------------------------------------------
 void CNPC_Monk::Precache()
 {
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/Monk.mdl" ) );
+#else
 	PrecacheModel( "models/Monk.mdl" );
+#endif
 	
 	PrecacheScriptSound( "NPC_Citizen.FootstepLeft" );
 	PrecacheScriptSound( "NPC_Citizen.FootstepRight" );
@@ -317,7 +321,11 @@ void CNPC_Monk::Spawn()
 
 	BaseClass::Spawn();
 
+#ifdef MAPBASE
+	SetModel( DefaultOrCustomModel( "models/Monk.mdl" ) );
+#else
 	SetModel( "models/Monk.mdl" );
+#endif
 
 	SetHullType(HULL_HUMAN);
 	SetHullSizeNormal();

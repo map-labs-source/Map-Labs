@@ -250,7 +250,11 @@ void CZombie::Precache( void )
 {
 	BaseClass::Precache();
 
+#ifdef MAPBASE
+	PrecacheModel( DefaultOrCustomModel( "models/zombie/classic.mdl" ) );
+#else
 	PrecacheModel( "models/zombie/classic.mdl" );
+#endif
 	PrecacheModel( "models/zombie/classic_torso.mdl" );
 	PrecacheModel( "models/zombie/classic_legs.mdl" );
 
@@ -509,12 +513,20 @@ void CZombie::SetZombieModel( void )
 
 	if ( m_fIsTorso )
 	{
+#ifdef MAPBASE
+		SetModel( DefaultOrCustomModel( "models/zombie/classic_torso.mdl" ) );
+#else
 		SetModel( "models/zombie/classic_torso.mdl" );
+#endif
 		SetHullType( HULL_TINY );
 	}
 	else
 	{
+#ifdef MAPBASE
+		SetModel( DefaultOrCustomModel( "models/zombie/classic.mdl" ) );
+#else
 		SetModel( "models/zombie/classic.mdl" );
+#endif
 		SetHullType( HULL_HUMAN );
 	}
 
