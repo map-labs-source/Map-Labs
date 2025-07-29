@@ -1184,6 +1184,9 @@ public:
 	int						m_nNumCrateHudHints;
 
 #ifdef MAPBASE
+	bool					GetDrawPlayerLegs( void ) { return m_bDrawPlayerLegs; }
+	void					SetDrawPlayerLegs( bool bToggle ) { m_bDrawPlayerLegs.Set( bToggle ); }
+
 	bool					GetDrawPlayerModelExternally( void ) { return m_bDrawPlayerModelExternally; }
 	void					SetDrawPlayerModelExternally( bool bToggle ) { m_bDrawPlayerModelExternally.Set( bToggle ); }
 #endif
@@ -1227,6 +1230,7 @@ private:
 	char					m_szNetname[MAX_PLAYER_NAME_LENGTH];
 
 #ifdef MAPBASE
+	CNetworkVar( bool, m_bDrawPlayerLegs );
 	CNetworkVar( bool, m_bDrawPlayerModelExternally );
 #endif
 
