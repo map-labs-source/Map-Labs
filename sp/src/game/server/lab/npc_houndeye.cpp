@@ -191,7 +191,7 @@ END_DATADESC()
 
 void CHoundeye::Precache(void)
 {
-	PrecacheModel("models/houndeye.mdl");
+	PrecacheModel( DefaultOrCustomModel( "models/houndeye.mdl" ) );
 	PrecacheScriptSound("NPC_Houndeye.Idle");
 	PrecacheScriptSound("NPC_Houndeye.Sonic");
 	PrecacheScriptSound("NPC_Houndeye.Alert");
@@ -216,7 +216,7 @@ void CHoundeye::Spawn(void)
 {
 	Precache();
 
-	SetModel("models/houndeye.mdl");
+	SetModel( DefaultOrCustomModel( "models/houndeye.mdl" ) );
 	BaseClass::Spawn();
 	SetHullType(HULL_MEDIUM); //TODO: Look into a custom 48x48x48 hull in the future
 	SetHullSizeNormal();
